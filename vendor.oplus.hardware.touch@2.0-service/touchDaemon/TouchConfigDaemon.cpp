@@ -294,8 +294,8 @@ int gestureTypeToKeycode(uint32_t type) {
     // drivers/input/touchscreen/.../touchpanel_proc.c. The Lineage HAL uses
     // KEY_GESTURE_START + id, not the raw HBP enum value.
     switch (type) {
-        case 2:  return kGestureStartKey + 2;   // UpVee / V
-        case 3:  return kGestureStartKey + 3;   // DownVee
+        case 2:  return kGestureStartKey + 11;  // UpVee -> volume up
+        case 3:  return kGestureStartKey + 10;  // DownVee -> volume down
         case 4:  return kGestureStartKey + 4;   // LeftVee
         case 5:  return kGestureStartKey + 5;   // RightVee
         case 6:  return kGestureStartKey + 6;   // Circle / O
