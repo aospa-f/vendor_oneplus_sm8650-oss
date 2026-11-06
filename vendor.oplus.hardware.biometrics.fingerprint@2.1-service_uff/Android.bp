@@ -15,11 +15,9 @@ package {
 
 cc_binary {
     name: "vendor.oplus.hardware.biometrics.fingerprint@2.1-service_uff_oss",
-    stem: "vendor.oplus.hardware.biometrics.fingerprint@2.1-service_uff",
+    stem: "vendor.oplus.hardware.biometrics.fingerprint@2.1-service_uff_oss",
     owner: "oneplus",
-    // The stock prebuilt OnePlus HAL is used by default; keep this source
-    // implementation as a disabled fallback.
-    enabled: false,
+    // Build the OSS HAL as the default fingerprint implementation.
     device_specific: true,
     relative_install_path: "hw",
 
