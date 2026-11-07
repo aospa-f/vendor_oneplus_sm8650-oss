@@ -1,0 +1,29 @@
+// Prebuilt NFC stack from OOS 16.0.10.600: the classic NfcNci priv-app plus its
+// NCI client libraries and the framework-nfc boot jar. Selected by
+// RELEASE_PACKAGE_NFC_STACK=NfcNci instead of the com.android.nfcservices APEX,
+// whose Android 17 NCI client protocol-mismatches the OOS vendor NFC HAL.
+
+android_app_import {
+    name: "NfcNci",
+    apk: "NfcNci.apk",
+    certificate: "platform",
+    privileged: true,
+    dex_preopt: {
+        enabled: false,
+    },
+}
+
+dex_import {
+    name: "framework-nfc",
+    jars: ["framework-nfc.jar"],
+}
+
+cc_prebuilt_library_shared {
+    name: "libnfc-nci",
+    srcs: ["libnfc-nci.so"],
+}
+
+cc_prebuilt_library_shared {
+    name: "libnfc_nci_jni",
+    srcs: ["libnfc_nci_jni.so"],
+}
