@@ -13,6 +13,7 @@
 #include "OplusTouch.h"
 
 #include <android-base/logging.h>
+#include <android-base/properties.h>
 #include <android/binder_status.h>
 
 #include <fcntl.h>
@@ -24,6 +25,9 @@
 #include <cstdlib>
 #include <cstring>
 #include <limits>
+#include <thread>
+#include <atomic>
+#include <chrono>
 #include <utility>
 
 #include "TouchNodeMap.h"
@@ -135,10 +139,44 @@ int32_t writeFile(const std::string& path, const std::string& data) {
     return static_cast<int32_t>(written);
 }
 
+constexpr int32_t kReportRateNode = 182;
+constexpr const char* kTouchPollingProp = "persist.touch_polling_mode";
+
+void applyTouchPollingRate(OplusTouch* touch) {
+    const std::string value = android::base::GetProperty(kTouchPollingProp, "0");
+    const std::string payload = (value == "1") ? "1" : "0";
+    int32_t result = touch->writeNodeFile(0, kReportRateNode, payload);
+    if (result >= 0) {
+        LOG(INFO) << "applied touch polling rate: " << payload;
+    } else {
+        LOG(WARNING) << "failed to apply touch polling rate: " << payload;
+    }
+}
+
 }  // namespace
+
+OplusTouch::~OplusTouch() {
+    mShutdown.store(true);
+}
 
 ndk::ScopedAStatus OplusTouch::initialize(OplusTouchStatus* _aidl_return) {
     LOG(INFO) << "oplus touch source service initializing";
+
+    // Apply the user-chosen touch polling rate immediately and watch the
+    // setting property so the toggle in Settings takes effect without a reboot.
+    applyTouchPollingRate(this);
+    std::thread([this]() {
+        std::string lastValue = android::base::GetProperty(kTouchPollingProp, "0");
+        while (!mShutdown.load()) {
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+            const std::string value = android::base::GetProperty(kTouchPollingProp, "0");
+            if (value != lastValue) {
+                lastValue = value;
+                applyTouchPollingRate(this);
+            }
+        }
+    }).detach();
+
     if (_aidl_return != nullptr) {
         *_aidl_return = OplusTouchStatus::OK;
     }

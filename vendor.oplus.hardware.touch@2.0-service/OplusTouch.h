@@ -23,7 +23,7 @@ namespace aidl::vendor::oplus::hardware::touch {
 class OplusTouch : public BnOplusTouch {
   public:
     OplusTouch() = default;
-    ~OplusTouch() override = default;
+    ~OplusTouch() override;
 
     ndk::ScopedAStatus initialize(OplusTouchStatus* _aidl_return) override;
 
@@ -56,8 +56,9 @@ class OplusTouch : public BnOplusTouch {
             const std::shared_ptr<IOplusTouchEventCallback>& in_callback,
             OplusTouchStatus* _aidl_return) override;
 
-  private:
     int32_t writeNodeFile(int32_t deviceId, int32_t nodeFlag, const std::string& info);
+
+  private:
 
     // The HBP kernel does not expose the legacy double_tap_enable_indep proc
     // node. Keep the AIDL node contract usable by exposing the gesture mask
@@ -68,6 +69,7 @@ class OplusTouch : public BnOplusTouch {
 
     std::mutex mCallbackMutex;
     std::vector<std::shared_ptr<IOplusTouchEventCallback>> mCallbacks;
+    std::atomic<bool> mShutdown{false};
 };
 
 }  // namespace aidl::vendor::oplus::hardware::touch
