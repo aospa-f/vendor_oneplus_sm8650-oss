@@ -14,8 +14,7 @@ package {
 }
 
 cc_binary {
-    name: "vendor.oplus.hardware.biometrics.fingerprint@2.1-service_uff_oss",
-    stem: "vendor.oplus.hardware.biometrics.fingerprint@2.1-service_uff_oss",
+    name: "vendor.oplus.hardware.biometrics.fingerprint@2.1-service_uff",
     owner: "oneplus",
     // Build the OSS HAL as the default fingerprint implementation.
     device_specific: true,
