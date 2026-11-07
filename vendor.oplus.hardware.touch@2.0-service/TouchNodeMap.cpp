@@ -52,7 +52,7 @@ constexpr TouchNode kTouchNodes[] = {
     {192, 1, "/proc/touchpanel", "glove_mode_enable", 0x100},
     {29, 1, "/proc/touchpanel", "report_point_first", 0x100},
     {30, 1, "/proc/touchpanel", "fd_touch_count", 0x100},
-    {31, 1, "/proc/touchpanel", "fp_enable", 0x100},
+    {31, 1, "/proc/touchpanel", "fingerprint_hal", 0x100},
     {34, 1, "/proc/touchpanel", "tpedge_limit_enable", 0x100},
     {35, 1, "/proc/touchpanel", "tp_switch_dead_zone", 0x100},
     {36, 1, "/proc/touchpanel", "tp_switch_corner_dead_l_zone", 0x100},

@@ -154,7 +154,7 @@ ndk::ScopedAStatus OplusTouch::isTouchNodeSupport(int32_t in_deviceId, int32_t i
     *_aidl_return = -1;
     auto path = getTouchNodePath(in_deviceId, in_nodeFlag, nullptr);
     if (!path.has_value()) {
-        LOG(DEBUG) << "unsupported deviceId=" << in_deviceId << " nodeFlag=" << in_nodeFlag;
+        LOG(ERROR) << "unsupported deviceId=" << in_deviceId << " nodeFlag=" << in_nodeFlag;
         return ndk::ScopedAStatus::ok();
     }
 
@@ -162,7 +162,7 @@ ndk::ScopedAStatus OplusTouch::isTouchNodeSupport(int32_t in_deviceId, int32_t i
         isSyntheticNode(in_deviceId, in_nodeFlag, *path)) {
         *_aidl_return = 1;
     } else {
-        LOG(DEBUG) << "missing node " << *path;
+        LOG(ERROR) << "missing node " << *path;
     }
     return ndk::ScopedAStatus::ok();
 }
