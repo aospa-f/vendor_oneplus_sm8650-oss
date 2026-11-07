@@ -27,3 +27,19 @@ cc_prebuilt_library_shared {
     name: "libnfc_nci_jni",
     srcs: ["libnfc_nci_jni.so"],
 }
+
+cc_prebuilt_binary {
+    name: "vendor.oplus.hardware.nfc_aidl-service",
+    srcs: ["vendor.oplus.hardware.nfc_aidl-service"],
+    device_specific: true,
+    relative_install_path: "hw",
+    init_rc: ["vendor.oplus.hardware.nfc_aidl-service.rc"],
+}
+
+cc_prebuilt_binary {
+    name: "vendor.oplus.hardware.nfcExtns-service",
+    srcs: ["vendor.oplus.hardware.nfcExtns-service"],
+    device_specific: true,
+    relative_install_path: "hw",
+    init_rc: ["vendor.oplus.hardware.nfcExtns-service.rc"],
+}
