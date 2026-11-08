@@ -68,3 +68,9 @@ on post-fs-data
     mkdir /data/vendor/touch/simulate 0771 system system
     mkdir /data/vendor/touch/upload 0771 system system
     write /proc/sys/kernel/firmware_config/force_sysfs_fallback 1
+
+on property:debug.touch_polling_mode=1
+    write /sys/bus/platform/drivers/synaptics_tcm_hbp/synaptics_tcm_hbp.0/high_rate 1
+
+on property:debug.touch_polling_mode=0
+    write /sys/bus/platform/drivers/synaptics_tcm_hbp/synaptics_tcm_hbp.0/high_rate 0

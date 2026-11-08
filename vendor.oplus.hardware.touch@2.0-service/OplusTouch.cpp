@@ -140,14 +140,37 @@ int32_t writeFile(const std::string& path, const std::string& data) {
 }
 
 constexpr int32_t kReportRateNode = 182;
-constexpr const char* kTouchPollingProp = "persist.touch_polling_mode";
+constexpr const char* kTouchPollingProp = "debug.touch_polling_mode";
+constexpr const char* kTouchPollingStateFile = "/data/vendor/touch/touch_polling_enabled";
+constexpr const char* kHighRateSysfsPath =
+    "/sys/bus/platform/drivers/synaptics_tcm_hbp/synaptics_tcm_hbp.0/high_rate";
+constexpr const char* kHighRateAltSysfsPath =
+    "/sys/devices/platform/soc/ac0000.qcom,qupv3_1_geni_se/a90000.spi/spi_master/spi0/spi0.0/synaptics_tcm_hbp.0/high_rate";
 
 void applyTouchPollingRate(OplusTouch* touch) {
     const std::string value = android::base::GetProperty(kTouchPollingProp, "0");
     const std::string payload = (value == "1") ? "1" : "0";
+
+    // Try Synaptics TCM HBP high_rate sysfs node first (OnePlus 13R / SM8650)
+    int fd = ::open(kHighRateSysfsPath, O_WRONLY | O_CLOEXEC);
+    if (fd < 0) {
+        fd = ::open(kHighRateAltSysfsPath, O_WRONLY | O_CLOEXEC);
+    }
+    if (fd >= 0) {
+        ssize_t written = ::write(fd, payload.c_str(), payload.size());
+        ::close(fd);
+        if (written > 0) {
+            LOG(INFO) << "applied touch polling rate to synaptics high_rate: " << payload;
+            writeFile(kTouchPollingStateFile, payload);
+            return;
+        }
+    }
+
+    // Fallback to legacy report_rate procfs node
     int32_t result = touch->writeNodeFile(0, kReportRateNode, payload);
     if (result >= 0) {
-        LOG(INFO) << "applied touch polling rate: " << payload;
+        LOG(INFO) << "applied touch polling rate to node 182: " << payload;
+        writeFile(kTouchPollingStateFile, payload);
     } else {
         LOG(WARNING) << "failed to apply touch polling rate: " << payload;
     }
@@ -155,27 +178,43 @@ void applyTouchPollingRate(OplusTouch* touch) {
 
 }  // namespace
 
+OplusTouch::OplusTouch() {
+    startPollingWatcher();
+}
+
 OplusTouch::~OplusTouch() {
     mShutdown.store(true);
+}
+
+void OplusTouch::startPollingWatcher() {
+    // Restore persisted state from file if property is unset on boot
+    std::string savedState;
+    if (readFile(kTouchPollingStateFile, 4, &savedState) > 0 && !savedState.empty()) {
+        const std::string initialVal = (savedState[0] == '1') ? "1" : "0";
+        if (android::base::GetProperty(kTouchPollingProp, "").empty()) {
+            android::base::SetProperty(kTouchPollingProp, initialVal);
+        }
+    }
+
+    applyTouchPollingRate(this);
+
+    std::thread([this]() {
+        std::string lastValue = "";
+        while (!mShutdown.load()) {
+            std::this_thread::sleep_for(std::chrono::milliseconds(500));
+            std::string curVal = android::base::GetProperty(kTouchPollingProp, "0");
+            if (curVal != lastValue) {
+                lastValue = curVal;
+                applyTouchPollingRate(this);
+            }
+        }
+    }).detach();
 }
 
 ndk::ScopedAStatus OplusTouch::initialize(OplusTouchStatus* _aidl_return) {
     LOG(INFO) << "oplus touch source service initializing";
 
-    // Apply the user-chosen touch polling rate immediately and watch the
-    // setting property so the toggle in Settings takes effect without a reboot.
     applyTouchPollingRate(this);
-    std::thread([this]() {
-        std::string lastValue = android::base::GetProperty(kTouchPollingProp, "0");
-        while (!mShutdown.load()) {
-            std::this_thread::sleep_for(std::chrono::seconds(2));
-            const std::string value = android::base::GetProperty(kTouchPollingProp, "0");
-            if (value != lastValue) {
-                lastValue = value;
-                applyTouchPollingRate(this);
-            }
-        }
-    }).detach();
 
     if (_aidl_return != nullptr) {
         *_aidl_return = OplusTouchStatus::OK;
